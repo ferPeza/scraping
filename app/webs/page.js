@@ -1,5 +1,5 @@
 "use client";
- 
+
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 
@@ -132,10 +132,15 @@ export default function Webs() {
             >
               {n.web_activa === true ? "Activa" : n.web_activa === false ? "Caída" : "Sin revisar"}
             </span>
-                         {n.web_activa === false && n.dominio_registrado != null && (
+            {n.web_activa === false && n.dominio_registrado != null && (
               <span className="badge">
                 {n.dominio_registrado
-                  ? `Registrado${n.dominio_vence ? " · vence " + new Date(n.dominio_vence + "T00:00:00").toLocaleDateString("es-MX") : ""}`
+                  ? `Registrado${
+                      n.dominio_vence
+                        ? " · vence " +
+                          new Date(n.dominio_vence + "T00:00:00").toLocaleDateString("es-MX")
+                        : ""
+                    }`
                   : "No registrado"}
               </span>
             )}
