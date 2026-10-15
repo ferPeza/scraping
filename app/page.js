@@ -94,17 +94,7 @@ export default function Home() {
     };
   }, [busqueda, conTel, conWeb]);
 
-  function exportarCSV() {
-    const cols = ["nombre", "actividad", "direccion", "colonia", "cp", "telefono", "correo", "sitio_web", "fecha_alta"];
-    const esc = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-    const csv = [cols.join(","), ...filas.map((f) => cols.map((c) => esc(f[c])).join(","))].join("\n");
-    const url = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" }));
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "negocios_monclova.csv";
-    a.click();
-    URL.revokeObjectURL(url);
-  }
+
 
   const paginas = Math.max(1, Math.ceil(total / POR_PAGINA));
   const fmt = (n) => n.toLocaleString("es-MX");
@@ -136,9 +126,6 @@ export default function Home() {
           }}
         >
           Con web
-        </button>
-        <button onClick={exportarCSV} disabled={!filas.length}>
-          Exportar CSV
         </button>
       </div>
 
