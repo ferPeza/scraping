@@ -23,3 +23,7 @@ a { color: #1d4ed8; }
 .caja span { display: block; font-size: 13px; color: #57534e; }
 .caja strong { font-size: 22px; font-weight: 500; }
 button.activo { background: #1c1917; color: #fff; border-color: #1c1917; }
+.scroll { overflow-x: auto; background: #fff; border: 1px solid #e7e5e4; border-radius: 12px; }
+.tabla { width: 100%; border-collapse: collapse; }
+.tabla th, .tabla td { text-align: left; padding: 10px 14px; border-top: 1px solid #e7e5e4; font-size: 14px; vertical-align: top; }
+.tabla thead th { border-top: 0; font-size: 13px; color: #57534e; font-weight: 500; }
