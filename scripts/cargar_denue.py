@@ -49,6 +49,7 @@ for lat, lon, radio in PUNTOS:
             "sitio_web": d.get("Sitio_internet"),
             "latitud": num(d.get("Latitud")),
             "longitud": num(d.get("Longitud")),
+            "fecha_alta": d.get("Fecha_Alta"),
         }
 
 lista = list(filas.values())
