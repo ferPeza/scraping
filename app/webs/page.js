@@ -132,6 +132,13 @@ export default function Webs() {
             >
               {n.web_activa === true ? "Activa" : n.web_activa === false ? "Caída" : "Sin revisar"}
             </span>
+                         {n.web_activa === false && n.dominio_registrado != null && (
+              <span className="badge">
+                {n.dominio_registrado
+                  ? `Registrado${n.dominio_vence ? " · vence " + new Date(n.dominio_vence + "T00:00:00").toLocaleDateString("es-MX") : ""}`
+                  : "No registrado"}
+              </span>
+            )}
           </div>
         ))}
       </div>
