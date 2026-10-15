@@ -5,12 +5,7 @@ import { supabase } from "../../lib/supabase";
 
 const POR_PAGINA = 50;
 
-const base = (cols = "*", opts) =>
-  supabase
-    .from("negocios")
-    .select(cols, opts)
-    .not("sitio_web", "is", null)
-    .neq("sitio_web", "");
+const base = (cols = "*", opts) => supabase.from("webs_unicas").select(cols, opts);
 
 export default function Webs() {
   const [filtro, setFiltro] = useState("todas");
@@ -27,9 +22,7 @@ export default function Webs() {
         base("id", head),
         base("id", head).eq("web_activa", true),
         base("id", head).eq("web_activa", false),
-        supabase
-          .from("negocios")
-          .select("web_revisada")
+        base("web_revisada")
           .not("web_revisada", "is", null)
           .order("web_revisada", { ascending: false })
           .limit(1),
@@ -75,6 +68,7 @@ export default function Webs() {
     setFiltro(f);
     setPagina(0);
   };
+  const fecha = (v) => (v ? new Date(v + "T00:00:00").toLocaleDateString("es-MX") : "—");
 
   return (
     <main>
@@ -90,7 +84,7 @@ export default function Webs() {
 
       <div className="cajas">
         <div className="caja">
-          <span>Negocios con web</span>
+          <span>Webs únicas</span>
           <strong>{fmt(stats.web)}</strong>
         </div>
         <div className="caja">
@@ -110,42 +104,59 @@ export default function Webs() {
       {error && <div className="vacio">Error: {error}</div>}
       <div className="total">{fmt(total)} resultados</div>
 
-      <div className="lista">
-        {filas.length === 0 && !error && <div className="vacio">Sin resultados.</div>}
-        {filas.map((n) => (
-          <div className="fila" key={n.id}>
-            <div className="info">
-              <div className="nombre">{n.nombre}</div>
-              <div className="sub">{[n.actividad, n.colonia].filter(Boolean).join(" · ")}</div>
-            </div>
-            <a
-              href={n.sitio_web.startsWith("http") ? n.sitio_web : `https://${n.sitio_web}`}
-              target="_blank"
-              rel="noreferrer"
-            >
-              {n.sitio_web}
-            </a>
-            <span
-              className={
-                n.web_activa === true ? "badge ok" : n.web_activa === false ? "badge mal" : "badge"
-              }
-            >
-              {n.web_activa === true ? "Activa" : n.web_activa === false ? "Caída" : "Sin revisar"}
-            </span>
-            {n.web_activa === false && n.dominio_registrado != null && (
-              <span className="badge">
-                {n.dominio_registrado
-                  ? `Registrado${
-                      n.dominio_vence
-                        ? " · vence " +
-                          new Date(n.dominio_vence + "T00:00:00").toLocaleDateString("es-MX")
-                        : ""
-                    }`
-                  : "No registrado"}
-              </span>
+      <div className="scroll">
+        <table className="tabla">
+          <thead>
+            <tr>
+              <th>Negocio</th>
+              <th>Sitio web</th>
+              <th>Estado</th>
+              <th>Dominio</th>
+              <th>Vence</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filas.length === 0 && !error && (
+              <tr>
+                <td colSpan={5} className="vacio">Sin resultados.</td>
+              </tr>
             )}
-          </div>
-        ))}
+            {filas.map((n) => (
+              <tr key={n.id}>
+                <td>
+                  <div className="nombre">{n.nombre}</div>
+                  <div className="sub">{[n.actividad, n.colonia].filter(Boolean).join(" · ")}</div>
+                </td>
+                <td>
+                  <a
+                    href={n.sitio_web.startsWith("http") ? n.sitio_web : `https://${n.sitio_web}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {n.host}
+                  </a>
+                </td>
+                <td>
+                  <span
+                    className={
+                      n.web_activa === true ? "badge ok" : n.web_activa === false ? "badge mal" : "badge"
+                    }
+                  >
+                    {n.web_activa === true ? "Activa" : n.web_activa === false ? "Caída" : "Sin revisar"}
+                  </span>
+                </td>
+                <td>
+                  {n.dominio_registrado === true
+                    ? "Registrado"
+                    : n.dominio_registrado === false
+                    ? "No registrado"
+                    : "—"}
+                </td>
+                <td>{fecha(n.dominio_vence)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
       <div className="pag">
