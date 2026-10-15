@@ -18,3 +18,7 @@ button:disabled { opacity: .5; cursor: default; }
 .vacio { padding: 24px; text-align: center; color: #57534e; }
 .pag { display: flex; gap: 8px; align-items: center; justify-content: center; margin-top: 12px; font-size: 14px; }
 a { color: #1d4ed8; }
+.cajas { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-bottom: 12px; }
+.caja { background: #fff; border: 1px solid #e7e5e4; border-radius: 12px; padding: 10px 14px; }
+.caja span { display: block; font-size: 13px; color: #57534e; }
+.caja strong { font-size: 22px; font-weight: 500; }
