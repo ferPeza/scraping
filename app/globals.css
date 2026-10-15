@@ -22,3 +22,4 @@ a { color: #1d4ed8; }
 .caja { background: #fff; border: 1px solid #e7e5e4; border-radius: 12px; padding: 10px 14px; }
 .caja span { display: block; font-size: 13px; color: #57534e; }
 .caja strong { font-size: 22px; font-weight: 500; }
+button.activo { background: #1c1917; color: #fff; border-color: #1c1917; }
