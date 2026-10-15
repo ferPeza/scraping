@@ -5,12 +5,17 @@ import { supabase } from "../lib/supabase";
 
 const POR_PAGINA = 50;
 
+function filtrar(q, t) {
+  return t ? q.or(`nombre.ilike.%${t}%,colonia.ilike.%${t}%,actividad.ilike.%${t}%`) : q;
+}
+
 export default function Home() {
   const [texto, setTexto] = useState("");
   const [busqueda, setBusqueda] = useState("");
   const [pagina, setPagina] = useState(0);
   const [filas, setFilas] = useState([]);
   const [total, setTotal] = useState(0);
+  const [stats, setStats] = useState({ tel: 0, web: 0, ultima: "—" });
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -24,17 +29,15 @@ export default function Home() {
   useEffect(() => {
     let activo = true;
     async function cargar() {
-      let q = supabase
-        .from("negocios")
-        .select("*", { count: "exact" })
-        .order("nombre")
-        .range(pagina * POR_PAGINA, pagina * POR_PAGINA + POR_PAGINA - 1);
-
       const t = busqueda.replace(/[,()%]/g, " ").trim();
-      if (t) {
-        q = q.or(`nombre.ilike.%${t}%,colonia.ilike.%${t}%,actividad.ilike.%${t}%`);
-      }
-
+      const q = filtrar(
+        supabase
+          .from("negocios")
+          .select("*", { count: "exact" })
+          .order("nombre")
+          .range(pagina * POR_PAGINA, pagina * POR_PAGINA + POR_PAGINA - 1),
+        t
+      );
       const { data, count, error } = await q;
       if (!activo) return;
       if (error) {
@@ -51,8 +54,40 @@ export default function Home() {
     };
   }, [busqueda, pagina]);
 
+  useEffect(() => {
+    let activo = true;
+    async function contar() {
+      const t = busqueda.replace(/[,()%]/g, " ").trim();
+      const base = () =>
+        filtrar(supabase.from("negocios").select("id", { count: "exact", head: true }), t);
+      const [tel, web, ult] = await Promise.all([
+        base().not("telefono", "is", null).neq("telefono", ""),
+        base().not("sitio_web", "is", null).neq("sitio_web", ""),
+        filtrar(
+          supabase
+            .from("negocios")
+            .select("fecha_alta")
+            .not("fecha_alta", "is", null)
+            .order("fecha_alta", { ascending: false })
+            .limit(1),
+          t
+        ),
+      ]);
+      if (!activo) return;
+      setStats({
+        tel: tel.count || 0,
+        web: web.count || 0,
+        ultima: ult.data?.[0]?.fecha_alta || "—",
+      });
+    }
+    contar();
+    return () => {
+      activo = false;
+    };
+  }, [busqueda]);
+
   function exportarCSV() {
-    const cols = ["nombre", "actividad", "direccion", "colonia", "cp", "telefono", "correo", "sitio_web"];
+    const cols = ["nombre", "actividad", "direccion", "colonia", "cp", "telefono", "correo", "sitio_web", "fecha_alta"];
     const esc = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
     const csv = [cols.join(","), ...filas.map((f) => cols.map((c) => esc(f[c])).join(","))].join("\n");
     const url = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" }));
@@ -64,6 +99,7 @@ export default function Home() {
   }
 
   const paginas = Math.max(1, Math.ceil(total / POR_PAGINA));
+  const fmt = (n) => n.toLocaleString("es-MX");
 
   return (
     <main>
@@ -80,8 +116,26 @@ export default function Home() {
         </button>
       </div>
 
+      <div className="cajas">
+        <div className="caja">
+          <span>Resultados</span>
+          <strong>{fmt(total)}</strong>
+        </div>
+        <div className="caja">
+          <span>Con teléfono</span>
+          <strong>{fmt(stats.tel)}</strong>
+        </div>
+        <div className="caja">
+          <span>Con sitio web</span>
+          <strong>{fmt(stats.web)}</strong>
+        </div>
+        <div className="caja">
+          <span>Alta más reciente</span>
+          <strong>{stats.ultima}</strong>
+        </div>
+      </div>
+
       {error && <div className="vacio">Error: {error}</div>}
-      <div className="total">{total.toLocaleString("es-MX")} resultados</div>
 
       <div className="lista">
         {filas.length === 0 && !error && <div className="vacio">Sin resultados.</div>}
@@ -90,7 +144,9 @@ export default function Home() {
             <div className="info">
               <div className="nombre">{n.nombre}</div>
               <div className="sub">
-                {[n.actividad, n.direccion, n.colonia].filter(Boolean).join(" · ")}
+                {[n.actividad, n.direccion, n.colonia, n.fecha_alta && `Alta: ${n.fecha_alta}`]
+                  .filter(Boolean)
+                  .join(" · ")}
               </div>
             </div>
             <div className="tel">{n.telefono || "Sin teléfono"}</div>
