@@ -5,13 +5,18 @@ import { supabase } from "../lib/supabase";
 
 const POR_PAGINA = 50;
 
-function filtrar(q, t) {
-  return t ? q.or(`nombre.ilike.%${t}%,colonia.ilike.%${t}%,actividad.ilike.%${t}%`) : q;
+function filtrar(q, t, conTel, conWeb) {
+  if (t) q = q.or(`nombre.ilike.%${t}%,colonia.ilike.%${t}%,actividad.ilike.%${t}%`);
+  if (conTel) q = q.not("telefono", "is", null).neq("telefono", "");
+  if (conWeb) q = q.not("sitio_web", "is", null).neq("sitio_web", "");
+  return q;
 }
 
 export default function Home() {
   const [texto, setTexto] = useState("");
   const [busqueda, setBusqueda] = useState("");
+  const [conTel, setConTel] = useState(false);
+  const [conWeb, setConWeb] = useState(false);
   const [pagina, setPagina] = useState(0);
   const [filas, setFilas] = useState([]);
   const [total, setTotal] = useState(0);
@@ -30,15 +35,14 @@ export default function Home() {
     let activo = true;
     async function cargar() {
       const t = busqueda.replace(/[,()%]/g, " ").trim();
-      const q = filtrar(
-        supabase
-          .from("negocios")
-          .select("*", { count: "exact" })
-          .order("nombre")
-          .range(pagina * POR_PAGINA, pagina * POR_PAGINA + POR_PAGINA - 1),
-        t
-      );
-      const { data, count, error } = await q;
+      const { data, count, error } = await filtrar(
+        supabase.from("negocios").select("*", { count: "exact" }),
+        t,
+        conTel,
+        conWeb
+      )
+        .order("nombre")
+        .range(pagina * POR_PAGINA, pagina * POR_PAGINA + POR_PAGINA - 1);
       if (!activo) return;
       if (error) {
         setError(error.message);
@@ -52,26 +56,30 @@ export default function Home() {
     return () => {
       activo = false;
     };
-  }, [busqueda, pagina]);
+  }, [busqueda, pagina, conTel, conWeb]);
 
   useEffect(() => {
     let activo = true;
     async function contar() {
       const t = busqueda.replace(/[,()%]/g, " ").trim();
       const base = () =>
-        filtrar(supabase.from("negocios").select("id", { count: "exact", head: true }), t);
+        filtrar(
+          supabase.from("negocios").select("id", { count: "exact", head: true }),
+          t,
+          conTel,
+          conWeb
+        );
       const [tel, web, ult] = await Promise.all([
         base().not("telefono", "is", null).neq("telefono", ""),
         base().not("sitio_web", "is", null).neq("sitio_web", ""),
         filtrar(
-          supabase
-            .from("negocios")
-            .select("fecha_alta")
-            .not("fecha_alta", "is", null)
-            .order("fecha_alta", { ascending: false })
-            .limit(1),
-          t
-        ),
+          supabase.from("negocios").select("fecha_alta").not("fecha_alta", "is", null),
+          t,
+          conTel,
+          conWeb
+        )
+          .order("fecha_alta", { ascending: false })
+          .limit(1),
       ]);
       if (!activo) return;
       setStats({
@@ -84,7 +92,7 @@ export default function Home() {
     return () => {
       activo = false;
     };
-  }, [busqueda]);
+  }, [busqueda, conTel, conWeb]);
 
   function exportarCSV() {
     const cols = ["nombre", "actividad", "direccion", "colonia", "cp", "telefono", "correo", "sitio_web", "fecha_alta"];
@@ -111,6 +119,24 @@ export default function Home() {
           onChange={(e) => setTexto(e.target.value)}
           placeholder="Buscar por nombre, giro o colonia"
         />
+        <button
+          className={conTel ? "activo" : ""}
+          onClick={() => {
+            setConTel((v) => !v);
+            setPagina(0);
+          }}
+        >
+          Con teléfono
+        </button>
+        <button
+          className={conWeb ? "activo" : ""}
+          onClick={() => {
+            setConWeb((v) => !v);
+            setPagina(0);
+          }}
+        >
+          Con web
+        </button>
         <button onClick={exportarCSV} disabled={!filas.length}>
           Exportar CSV
         </button>
